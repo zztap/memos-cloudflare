@@ -180,49 +180,172 @@ class ApiClient {
       return [];
     }
 
-    // Split content by paragraphs (double newlines)
-    const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim());
-    
-    const nodes = [];
-    
-    for (const paragraph of paragraphs) {
-      const children = [];
-
-      // Split paragraph by single newlines for line breaks
-      const lines = paragraph.split('\n');
+    // 解析行内元素：标签、链接、图片、加粗、代码等
+    const parseInlineElements = (text: string): any[] => {
+      const nodes: any[] = [];
+      let currentText = text;
       
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line) {
-          // Add text node
-          children.push({
-            type: NodeType.TEXT,
-            textNode: {
-              content: line
+      const patterns = [
+        { type: NodeType.IMAGE, regex: /^!\[(.*?)\]\((.*?)\)/ },  // 图片
+        { type: NodeType.LINK, regex: /^\[(.*?)\]\((.*?)\)/ },   // 链接
+        { type: NodeType.AUTO_LINK, regex: /^(https?:\/\/[^\s]+)/ }, // 自动链接
+        { type: NodeType.TAG, regex: /^#([^\s#.,!?:;'"(){}\[\]]+)/ }, // 标签
+        { type: NodeType.CODE, regex: /^`([^`]+)`/ },           // 行内代码
+        { type: NodeType.BOLD, regex: /^\*\*(.*?)\*\*/ },        // 粗体
+        { type: NodeType.ITALIC, regex: /^\*(.*?)\*/ }           // 斜体
+      ];
+
+      while (currentText.length > 0) {
+        let matched = false;
+        for (const pattern of patterns) {
+          const match = currentText.match(pattern.regex);
+          if (match) {
+            matched = true;
+            switch (pattern.type) {
+              case NodeType.IMAGE:
+                nodes.push({ type: NodeType.IMAGE, imageNode: { altText: match[1], url: match[2] } });
+                break;
+              case NodeType.LINK:
+                nodes.push({ type: NodeType.LINK, linkNode: { content: parseInlineElements(match[1]), url: match[2] } });
+                break;
+              case NodeType.AUTO_LINK:
+                nodes.push({ type: NodeType.AUTO_LINK, autoLinkNode: { url: match[1], isRawText: true } });
+                break;
+              case NodeType.TAG:
+                nodes.push({ type: NodeType.TAG, tagNode: { content: match[1] } });
+                break;
+              case NodeType.CODE:
+                nodes.push({ type: NodeType.CODE, codeNode: { content: match[1] } });
+                break;
+              case NodeType.BOLD:
+                nodes.push({ type: NodeType.BOLD, boldNode: { children: parseInlineElements(match[1]), symbol: '*' } });
+                break;
+              case NodeType.ITALIC:
+                nodes.push({ type: NodeType.ITALIC, italicNode: { children: parseInlineElements(match[1]), symbol: '*' } });
+                break;
             }
-          });
+            currentText = currentText.substring(match[0].length);
+            break;
+          }
         }
-        
-        // Add line break if not the last line
-        if (i < lines.length - 1) {
-          children.push({
-            type: NodeType.LINE_BREAK,
-            lineBreakNode: {}
-          });
+
+        if (!matched) {
+          const nextSpecialCharIndex = currentText.search(/[!\[#`*h]/);
+          let plainText = "";
+          if (nextSpecialCharIndex === -1) {
+            plainText = currentText;
+            currentText = "";
+          } else if (nextSpecialCharIndex === 0) {
+            plainText = currentText[0];
+            currentText = currentText.substring(1);
+          } else {
+            plainText = currentText.substring(0, nextSpecialCharIndex);
+            currentText = currentText.substring(nextSpecialCharIndex);
+          }
+          
+          const lastNode = nodes[nodes.length - 1];
+          if (lastNode && lastNode.type === NodeType.TEXT) {
+             lastNode.textNode.content += plainText;
+          } else {
+            nodes.push({ type: NodeType.TEXT, textNode: { content: plainText } });
+          }
         }
       }
+      return nodes;
+    };
 
-      // Create a paragraph node
-      if (children.length > 0) {
+    const lines = content.split('\n');
+    const nodes: any[] = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // 1. 代码块
+      if (line.trim().startsWith('```')) {
+        const language = line.trim().substring(3);
+        const codeLines = [];
+        i++; 
+        while (i < lines.length && !lines[i].trim().startsWith('```')) {
+          codeLines.push(lines[i]);
+          i++;
+        }
+        nodes.push({
+          type: NodeType.CODE_BLOCK,
+          codeBlockNode: { language: language, content: codeLines.join('\n') }
+        });
+        continue;
+      }
+
+      // 2. 引用
+      if (line.startsWith('> ')) {
+        nodes.push({
+          type: NodeType.BLOCKQUOTE,
+          blockquoteNode: { children: parseInlineElements(line.substring(2)) }
+        });
+        continue;
+      }
+      
+      // 3. 任务列表
+      const taskMatch = line.match(/^(\s*)- \[([ xX])\] (.*)/);
+      if (taskMatch) {
+        const indent = Math.floor(taskMatch[1].length / 2);
+        const isComplete = taskMatch[2].toLowerCase() === 'x';
+        nodes.push({
+          type: NodeType.TASK_LIST_ITEM,
+          taskListItemNode: { symbol: '-', indent: indent, complete: isComplete, children: parseInlineElements(taskMatch[3]) }
+        });
+        continue;
+      }
+      
+      // 4. 无序列表
+      const listMatch = line.match(/^(\s*)- (.*)/);
+      if (listMatch) {
+        const indent = Math.floor(listMatch[1].length / 2);
+        nodes.push({
+          type: NodeType.UNORDERED_LIST_ITEM,
+          unorderedListItemNode: { symbol: '-', indent: indent, children: parseInlineElements(listMatch[2]) }
+        });
+        continue;
+      }
+      
+      // 5. 有序列表
+      const orderedMatch = line.match(/^(\s*)(\d+)\. (.*)/);
+      if (orderedMatch) {
+        const indent = Math.floor(orderedMatch[1].length / 2);
+        nodes.push({
+          type: NodeType.ORDERED_LIST_ITEM,
+          orderedListItemNode: { number: orderedMatch[2], indent: indent, children: parseInlineElements(orderedMatch[3]) }
+        });
+        continue;
+      }
+      
+      // 6. 标题
+      const headingMatch = line.match(/^(#{1,6}) (.*)/);
+      if (headingMatch) {
+        nodes.push({
+          type: NodeType.HEADING,
+          headingNode: { level: headingMatch[1].length, children: parseInlineElements(headingMatch[2]) }
+        });
+        continue;
+      }
+
+      // 7. 分割线
+      if (line.trim() === '---' || line.trim() === '***') {
+        nodes.push({ type: NodeType.HORIZONTAL_RULE, horizontalRuleNode: { symbol: line.trim() } });
+        continue;
+      }
+      
+      // 8. 普通段落
+      if (line.trim()) {
         nodes.push({
           type: NodeType.PARAGRAPH,
-          paragraphNode: {
-            children: children
-          }
+          paragraphNode: { children: parseInlineElements(line) }
         });
+      } else {
+        nodes.push({ type: NodeType.LINE_BREAK, lineBreakNode: {} });
       }
     }
-
+    
     return nodes;
   }
 
