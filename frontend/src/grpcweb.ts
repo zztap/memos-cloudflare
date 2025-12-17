@@ -45,6 +45,7 @@ export const authServiceClient = {
   },
   signUp: (request: { username: string; password: string; email?: string }) =>
     apiClient.signUp(request.username, request.password, request.email),
+    signOut: () => apiClient.signOut(),
   getAuthStatus: () => apiClient.getCurrentUser(),
 };
 
