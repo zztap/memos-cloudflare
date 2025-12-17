@@ -104,7 +104,14 @@ class ApiClient {
       body: JSON.stringify({ username, password, email }),
     });
   }
-
+    async signOut() {
+    localStorage.removeItem('accessToken');
+    try {
+      await this.request('/api/auth/signout', { method: 'POST' });
+    } catch (e) {
+      console.warn('Backend signout failed', e);
+    }
+  }
   // User Services
   async getCurrentUser() {
     const user = await this.request<any>('/api/user/me');
