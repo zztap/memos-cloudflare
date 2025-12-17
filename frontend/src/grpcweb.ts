@@ -131,7 +131,29 @@ export const userServiceClient = {
 
 // Memo Service  
 export const memoServiceClient = {
-  listMemos: (request: any) => apiClient.getMemos(request),
+    listMemos: (request: any) => {
+    // 补丁: 将前端的 filter 字符串转换为后端 API 参数
+    if (request.oldFilter) {
+      // 提取标签: tag_search == ["#tag"]
+      const tagMatch = request.oldFilter.match(/tag_search == \["(.+?)"\]/);
+      if (tagMatch) {
+        request.tag = tagMatch[1];
+      }
+      
+      // 提取内容搜索: content_search == ["keyword"]
+      const contentMatch = request.oldFilter.match(/content_search == \["(.+?)"\]/);
+      if (contentMatch) {
+         request.content = contentMatch[1];
+      }
+      
+      // 提取可见性: visibility == "PUBLIC"
+         const visibilityMatch = request.oldFilter.match(/visibility == "(.+?)"/);
+      if (visibilityMatch) {
+         request.visibility = visibilityMatch[1];
+      }
+    }
+    return apiClient.getMemos(request);
+  },
   getMemo: (request: { name: string }) => {
     const id = parseInt(request.name.replace('memos/', ''));
     return apiClient.getMemo(id);
