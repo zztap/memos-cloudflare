@@ -15,18 +15,18 @@ const HomeLayout = observer(() => {
           <HomeSidebarDrawer />
         </MobileHeader>
       )}
-      {md && (
+       {md && (
         <div
           className={cn(
-            "fixed top-0 left-16 shrink-0 h-svh transition-all",
-            "border-r border-gray-200 dark:border-zinc-800",
+            "fixed top-0 right-0 shrink-0 h-svh transition-all",
+            "border-l border-gray-200 dark:border-zinc-800",
             lg ? "w-72" : "w-56",
           )}
         >
           <HomeSidebar className={cn("px-3 py-6")} />
         </div>
       )}
-      <div className={cn("w-full min-h-full", lg ? "pl-72" : md ? "pl-56" : "")}>
+      <div className={cn("w-full min-h-full", lg ? "pr-72" : md ? "pr-56" : "")}>
         <div className={cn("w-full mx-auto px-4 sm:px-6 md:pt-6 pb-8")}>
           <Outlet />
         </div>
