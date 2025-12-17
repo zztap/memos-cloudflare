@@ -16,7 +16,7 @@ const HomeLayout = observer(() => {
         </MobileHeader>
       )}
       
-      <div className={cn("w-full max-w-2xl mx-auto px-4 sm:px-6 md:pt-6 pb-8")}>
+      <div className={cn("w-full max-w-2xl px-4 sm:px-6 md:pt-6 pb-8")}>
         <Outlet />
       </div>
 
