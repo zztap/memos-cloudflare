@@ -14,7 +14,7 @@ import { cn } from "@/utils";
 const RootLayout = observer(() => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { sm } = useResponsiveWidth();
+  const { sm, lg } = useResponsiveWidth();
   const currentUser = useCurrentUser();
   const [initialized, setInitialized] = useState(false);
   const pathname = useMemo(() => location.pathname, [location.pathname]);
@@ -53,7 +53,7 @@ const RootLayout = observer(() => {
           )}
         >
           {/* 修改点 3: 传递 collapsed 参数，大屏展开，小屏收起 */}
-          <Navigation collapsed={!useResponsiveWidth().lg} />
+          <Navigation collapsed={!lg} />
         </div>
       )}
       <main className="w-full h-auto grow shrink flex flex-col justify-start items-center">
