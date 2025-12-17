@@ -83,8 +83,21 @@ export const userServiceClient = {
     const currentUserId = 1; // TODO: 从当前用户context获取真实ID
     return apiClient.updateUserSetting(currentUserId, request.setting);
   },
-  getUserStats: (request: { name: string }) =>
-    Promise.resolve({
+    getUserStats: async (request: { name: string }) => {
+    // 补丁: 获取真实标签数据
+    let tagCount: Record<string, number> = {};
+    try {
+      const tags = await apiClient.getTags();
+      if (Array.isArray(tags)) {
+        tags.forEach((tag: any) => {
+          tagCount[tag.name] = tag.memo_count || 1;
+        });
+      }
+    } catch (e) {
+      console.error('Failed to fetch tags for stats:', e);
+    }
+
+    return {
       name: request.name,
       memoDisplayTimestamps: [],
       memoTypeStats: {
@@ -93,10 +106,11 @@ export const userServiceClient = {
         todoCount: 0,
         undoCount: 0,
       },
-      tagCount: {},
+      tagCount: tagCount,
       pinnedMemos: [],
       totalMemoCount: 0,
-    }),
+    };
+  },
   listAllUserStats: () =>
     Promise.resolve({
       userStats: [{
