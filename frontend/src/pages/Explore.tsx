@@ -17,6 +17,7 @@ const Explore = observer(() => {
       <div className="w-full px-4 sm:px-6">
         <PagedMemoList
           renderer={(memo: Memo) => <MemoView key={`${memo.name}-${memo.updateTime}`} memo={memo} showCreator showVisibility compact />}
+          filter="visibility == 'PUBLIC'"
           listSort={(memos: Memo[]) =>
             memos
               .filter((memo) => memo.state === State.NORMAL)
