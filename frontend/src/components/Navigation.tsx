@@ -1,5 +1,5 @@
 import { Tooltip } from "@mui/joy";
-import { EarthIcon, LibraryIcon, PaperclipIcon, UserCircleIcon } from "lucide-react";
+import { ArchiveIcon, BellIcon, EarthIcon, LibraryIcon, PaperclipIcon, SettingsIcon, UserCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { NavLink } from "react-router-dom";
@@ -54,6 +54,30 @@ const Navigation = observer((props: Props) => {
     title: t("common.resources"),
     icon: <PaperclipIcon className="w-6 h-auto opacity-70 shrink-0" />,
   };
+  const inboxNavLink: NavLinkItem = {
+    id: "header-inbox",
+    path: Routes.INBOX,
+    title: t("common.inbox"),
+    icon: <BellIcon className="w-6 h-auto opacity-70 shrink-0" />,
+  };
+  const archivedNavLink: NavLinkItem = {
+    id: "header-archived",
+    path: Routes.ARCHIVED,
+    title: t("common.archived"),
+    icon: <ArchiveIcon className="w-6 h-auto opacity-70 shrink-0" />,
+  };
+  const settingNavLink: NavLinkItem = {
+    id: "header-setting",
+    path: Routes.SETTING,
+    title: t("common.settings"),
+    icon: <SettingsIcon className="w-6 h-auto opacity-70 shrink-0" />,
+  };
+  const profileNavLink: NavLinkItem = {
+    id: "header-profile",
+    path: `/u/${currentUser?.username}`,
+    title: t("common.profile"),
+    icon: <UserCircleIcon className="w-6 h-auto opacity-70 shrink-0" />,
+  };
   const signInNavLink: NavLinkItem = {
     id: "header-auth",
     path: Routes.AUTH,
@@ -61,7 +85,9 @@ const Navigation = observer((props: Props) => {
     icon: <UserCircleIcon className="w-6 h-auto opacity-70 shrink-0" />,
   };
 
-  const navLinks: NavLinkItem[] = currentUser ? [homeNavLink, exploreNavLink, resourcesNavLink] : [exploreNavLink, signInNavLink];
+  const navLinks: NavLinkItem[] = currentUser 
+    ? [homeNavLink, resourcesNavLink, exploreNavLink, profileNavLink, inboxNavLink, archivedNavLink, settingNavLink] 
+    : [exploreNavLink, signInNavLink];
 
   return (
     <header
