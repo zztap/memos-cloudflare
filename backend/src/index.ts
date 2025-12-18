@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { prettyJSON } from 'hono/pretty-json';
-
 import { authRoutes } from './routes/auth';
 import { userRoutes } from './routes/user';
 import { memoRoutes } from './routes/memo';
@@ -11,13 +10,10 @@ import { resourceRoutes } from './routes/resource';
 import { workspaceRoutes } from './routes/workspace';
 import { webhookRoutes } from './routes/webhook';
 import { authMiddleware } from './middleware/auth';
-
 // 导入环境类型
 import { Env } from './types';
-
 // 创建 Hono 应用实例
 const app = new Hono<{ Bindings: Env }>();
-
 // 全局中间件
 app.use('*', cors({
   origin: (origin, c) => {
@@ -51,10 +47,8 @@ app.use('*', cors({
   credentials: true,
   maxAge: 86400
 }));
-
 app.use('*', logger());
 app.use('/api/*', prettyJSON());
-
 // 健康检查端点
 app.get('/health', (c) => {
   return c.json({
@@ -64,31 +58,39 @@ app.get('/health', (c) => {
     version: '0.2.0'
   });
 });
-
 // 先注册公开的路由
 app.route('/api/auth', authRoutes);
-
 // workspace 路由 - /profile 和 /setting GET 端点是公开的
 app.route('/api/workspace', workspaceRoutes);
-
+// 需要认证的路由
 // 需要认证的路由
 app.use('/api/user/*', authMiddleware);
 app.use('/api/tag/*', authMiddleware);
+// app.use('/api/tag/*', authMiddleware); // 允许公开访问 /api/tag GET
+app.use('/api/tag', (c, next) => {
+  if (c.req.method === 'GET') {
+    return next();
+  }
+  return authMiddleware(c, next);
+});
+app.use('/api/tag/*', (c, next) => {
+  // 对于 /api/tag/* 路径，如果是 GET 请求且不是获取特定ID的额外操作（虽然目前 tag 路由只有 DELETE /:id）
+  // 为了安全，DELETE必须认证
+  return authMiddleware(c, next);
+});
 app.use('/api/resource/*', authMiddleware);
 app.use('/api/webhook/*', authMiddleware);
-
 // memo 路由需要部分认证
 app.use('/api/memo', authMiddleware);
+// app.use('/api/memo', authMiddleware); // 允许公开访问 /api/memo GET
 app.post('/api/memo/*', authMiddleware);
 app.patch('/api/memo/*', authMiddleware);
 app.delete('/api/memo/*', authMiddleware);
-
 app.route('/api/user', userRoutes);
 app.route('/api/memo', memoRoutes);
 app.route('/api/tag', tagRoutes);
 app.route('/api/resource', resourceRoutes);
 app.route('/api/webhook', webhookRoutes);
-
 // 文件下载路由 (不在 /api 下)
 app.get('/o/r/:uid/:filename', async (c) => {
   try {
@@ -98,24 +100,19 @@ app.get('/o/r/:uid/:filename', async (c) => {
     const resource = await c.env.DB.prepare(
       'SELECT * FROM resource WHERE uid = ?'
     ).bind(uid).first();
-
     if (!resource) {
       return c.json({ message: 'Resource not found' }, 404);
     }
-
     // 检查 R2 绑定是否存在
     if (!c.env.R2) {
       return c.json({ message: 'R2 bucket not configured' }, 500);
     }
-
     // 从 R2 获取文件
     const r2Key = `${uid}/${filename}`;
     const object = await c.env.R2.get(r2Key);
-
     if (!object) {
       return c.json({ message: 'File not found in storage' }, 404);
     }
-
     // 返回文件内容
     return new Response(object.body, {
       headers: {
@@ -129,12 +126,10 @@ app.get('/o/r/:uid/:filename', async (c) => {
     return c.json({ message: 'Internal server error' }, 500);
   }
 });
-
 // 404 处理
 app.notFound((c) => {
   return c.json({ message: 'Not Found' }, 404);
 });
-
 // 错误处理
 app.onError((err, c) => {
   console.error('Unhandled error:', err);
@@ -143,7 +138,4 @@ app.onError((err, c) => {
     ...(c.env.LOG_LEVEL === 'debug' && { error: err.message })
   }, 500);
 });
-
-
-
 export default app; 
