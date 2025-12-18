@@ -20,22 +20,34 @@ const HomeSidebar = observer((props: Props) => {
   const location = useLocation();
   const currentUser = useCurrentUser();
 
+  // --- 修改开始 ---
   useDebounce(
     async () => {
       let parent: string | undefined = undefined;
+      // 1. 如果在主页且已登录
       if (location.pathname === Routes.ROOT && currentUser) {
         parent = currentUser.name;
       }
-      if (matchPath("/u/:username", location.pathname) !== null) {
+      // 2. 如果在用户详情页
+      else if (matchPath("/u/:username", location.pathname) !== null) {
         const username = last(location.pathname.split("/"));
         const user = await userStore.getOrFetchUserByUsername(username || "");
         parent = user.name;
       }
-      await userStore.fetchUserStats(parent);
+      // 3. 👇 新增：如果在发现页（Explore），强制使用 admin 用户的数据（或者任何有效用户）来显示标签
+      else if (location.pathname === Routes.EXPLORE) {
+         parent = 'users/1'; 
+      }
+      
+      // 只有 parent 有值的时候才加载数据
+      if (parent) {
+        await userStore.fetchUserStats(parent);
+      }
     },
     300,
     [memoStore.state.memos.length, userStore.state.statsStateId, location.pathname],
   );
+  // --- 修改结束 ---
 
   return (
     <aside className={cn("relative w-full h-full overflow-auto flex flex-col justify-start items-start", props.className)}>
