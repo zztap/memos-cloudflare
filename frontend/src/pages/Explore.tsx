@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import { observer } from "mobx-react-lite";
-// 👇 确保引入了 HomeSidebar
 import { HomeSidebar } from "@/components/HomeSidebar";
 import MemoView from "@/components/MemoView";
 import MobileHeader from "@/components/MobileHeader";
@@ -21,6 +20,7 @@ const Explore = observer(() => {
       <div className={cn("w-full max-w-2xl px-4 sm:px-6 md:pt-6 pb-8")}>
         <PagedMemoList
           renderer={(memo: Memo) => <MemoView key={`${memo.name}-${memo.updateTime}`} memo={memo} showCreator showVisibility compact />}
+          owner="users/1"
           filter="visibility == 'PUBLIC'"
           listSort={(memos: Memo[]) =>
             memos
@@ -35,7 +35,6 @@ const Explore = observer(() => {
         />
       </div>
 
-      {/* 👇 这一整块是右侧边栏，没有它就不显示日历和标签 */}
       {md && (
         <div className={cn("sticky top-0 w-72 shrink-0 h-svh transition-all px-3 py-6")}>
           <HomeSidebar />
