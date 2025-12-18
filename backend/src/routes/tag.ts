@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
-
 const tagRoutes = new Hono();
-
+// 获取用户的标签列表
 // 获取用户的标签列表
 tagRoutes.get('/', async (c) => {
   try {
@@ -9,16 +8,22 @@ tagRoutes.get('/', async (c) => {
     if (!userPayload) {
       return c.json({ message: 'Unauthorized' }, 401);
     }
-
+    let userId = 1; // Default to admin user (ID 1) if not logged in
     // 获取用户ID
     const user = await c.env.DB.prepare(
       'SELECT id FROM user WHERE uid = ?'
     ).bind(userPayload.sub).first();
-
+    if (userPayload) {
+      // 获取当前登录用户ID
+      const user = await c.env.DB.prepare(
+        'SELECT id FROM user WHERE uid = ?'
+      ).bind(userPayload.sub).first();
     if (!user) {
       return c.json({ message: 'User not found' }, 404);
+      if (user) {
+        userId = user.id as number;
+      }
     }
-
     const tags = await c.env.DB.prepare(`
       SELECT t.*, COUNT(mt.memo_id) as memo_count
       FROM tag t
@@ -27,15 +32,13 @@ tagRoutes.get('/', async (c) => {
       GROUP BY t.id, t.name, t.created_ts, t.creator_id
       ORDER BY t.name ASC
     `).bind(user.id).all();
-
+    `).bind(userId).all();
     return c.json(tags.results || []);
-
   } catch (error) {
     console.error('Get tags error:', error);
     return c.json({ message: 'Internal server error' }, 500);
   }
 });
-
 // 创建标签
 tagRoutes.post('/', async (c) => {
   try {
@@ -43,60 +46,48 @@ tagRoutes.post('/', async (c) => {
     if (!userPayload) {
       return c.json({ message: 'Unauthorized' }, 401);
     }
-
     const { name } = await c.req.json();
     
     if (!name || !name.trim()) {
       return c.json({ message: 'Tag name is required' }, 400);
     }
-
     // 获取用户ID
     const user = await c.env.DB.prepare(
       'SELECT id FROM user WHERE uid = ?'
     ).bind(userPayload.sub).first();
-
     if (!user) {
       return c.json({ message: 'User not found' }, 404);
     }
-
     // 检查标签是否已存在
     const existingTag = await c.env.DB.prepare(
       'SELECT id FROM tag WHERE creator_id = ? AND name = ?'
     ).bind(user.id, name.trim()).first();
-
     if (existingTag) {
       return c.json({ message: 'Tag already exists' }, 409);
     }
-
     const now = Math.floor(Date.now() / 1000);
-
     // 创建标签
     const result = await c.env.DB.prepare(`
       INSERT INTO tag (creator_id, name, created_ts)
       VALUES (?, ?, ?)
     `).bind(user.id, name.trim(), now).run();
-
     if (!result.success) {
       throw new Error('Failed to create tag');
     }
-
     // 返回创建的标签
     const newTag = await c.env.DB.prepare(
       'SELECT * FROM tag WHERE id = ?'
     ).bind(result.meta.last_row_id).first();
-
     return c.json({
       id: newTag.id,
       name: newTag.name,
       createdTs: newTag.created_ts
     });
-
   } catch (error) {
     console.error('Create tag error:', error);
     return c.json({ message: 'Internal server error' }, 500);
   }
 });
-
 // 删除标签
 tagRoutes.delete('/:id', async (c) => {
   try {
@@ -106,41 +97,32 @@ tagRoutes.delete('/:id', async (c) => {
     if (!userPayload) {
       return c.json({ message: 'Unauthorized' }, 401);
     }
-
     // 获取用户ID
     const user = await c.env.DB.prepare(
       'SELECT id FROM user WHERE uid = ?'
     ).bind(userPayload.sub).first();
-
     if (!user) {
       return c.json({ message: 'User not found' }, 404);
     }
-
     // 检查标签是否存在且属于当前用户
     const tag = await c.env.DB.prepare(
       'SELECT * FROM tag WHERE id = ? AND creator_id = ?'
     ).bind(tagId, user.id).first();
-
     if (!tag) {
       return c.json({ message: 'Tag not found' }, 404);
     }
-
     // 删除标签相关的关联
     await c.env.DB.prepare(
       'DELETE FROM memo_tag WHERE tag_id = ?'
     ).bind(tagId).run();
-
     // 删除标签
     await c.env.DB.prepare(
       'DELETE FROM tag WHERE id = ?'
     ).bind(tagId).run();
-
     return c.json({ message: 'Tag deleted successfully' });
-
   } catch (error) {
     console.error('Delete tag error:', error);
     return c.json({ message: 'Internal server error' }, 500);
   }
 });
-
 export { tagRoutes }; 
