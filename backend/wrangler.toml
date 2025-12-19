@@ -17,7 +17,7 @@ BASE_URL = "https://your-worker-name.your-subdomain.workers.dev"
 [[d1_databases]]
 binding = "DB"
 database_name = "memos"
-database_id = "9cc9b7eb-9bb2-4825-8b41-21a1233d7dc1"
+database_id = "c48fcbb9-44ce-4e55-8052-e36be7fe84e6"
 
 [[r2_buckets]]
 binding = "R2"
