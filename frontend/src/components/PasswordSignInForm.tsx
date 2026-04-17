@@ -1,4 +1,4 @@
-import { Button, Checkbox, Input } from "@usememos/mui";
+import { Button, Checkbox } from "@usememos/mui";
 import { LoaderIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { ClientError } from "nice-grpc-web";
@@ -60,9 +60,8 @@ const PasswordSignInForm = observer(() => {
       <div className="flex flex-col justify-start items-start w-full gap-4">
         <div className="w-full flex flex-col justify-start items-start">
           <span className="leading-8 text-gray-600">{t("common.username")}</span>
-          <Input
-            className="w-full bg-white dark:bg-black"
-            size="lg"
+          <input
+            className="w-full p-3 border rounded bg-white dark:bg-black dark:text-white"
             type="text"
             readOnly={actionBtnLoadingState.isLoading}
             placeholder={t("common.username")}
@@ -76,9 +75,8 @@ const PasswordSignInForm = observer(() => {
         </div>
         <div className="w-full flex flex-col justify-start items-start">
           <span className="leading-8 text-gray-600">{t("common.password")}</span>
-          <Input
-            className="w-full bg-white dark:bg-black"
-            size="lg"
+          <input
+            className="w-full p-3 border rounded bg-white dark:bg-black dark:text-white"
             type="password"
             readOnly={actionBtnLoadingState.isLoading}
             placeholder={t("common.password")}

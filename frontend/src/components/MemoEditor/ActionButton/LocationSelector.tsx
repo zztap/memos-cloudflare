@@ -1,4 +1,4 @@
-import { Button, Input } from "@usememos/mui";
+import { Button } from "@usememos/mui";
 import { LatLng } from "leaflet";
 import { MapPinIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -109,20 +109,20 @@ const LocationSelector = (props: Props) => {
           <LeafletMap key={JSON.stringify(state.initilized)} latlng={state.position} onChange={onPositionChanged} />
           <div className="mt-2 w-full flex flex-row justify-between items-center gap-2">
             <div className="flex flex-row items-center justify-start gap-2">
-              <Input
-                placeholder="Choose a position first."
-                value={state.placeholder}
-                size="sm"
-                startDecorator={
-                  state.position && (
-                    <span className="text-xs opacity-60">
-                      [{state.position.lat.toFixed(2)}, {state.position.lng.toFixed(2)}]
-                    </span>
-                  )
-                }
-                disabled={!state.position}
-                onChange={(e) => setState((state) => ({ ...state, placeholder: e.target.value }))}
-              />
+              <div className="relative w-full">
+                {state.position && (
+                  <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-xs opacity-60">
+                    [{state.position.lat.toFixed(2)}, {state.position.lng.toFixed(2)}]
+                  </span>
+                )}
+                <input
+                  className="w-full p-2 border rounded bg-white dark:bg-zinc-700 dark:text-gray-300 pl-24"
+                  placeholder="Choose a position first."
+                  value={state.placeholder}
+                  disabled={!state.position}
+                  onChange={(e) => setState((state) => ({ ...state, placeholder: e.target.value }))}
+                />
+              </div>
             </div>
             <Button
               className="shrink-0"

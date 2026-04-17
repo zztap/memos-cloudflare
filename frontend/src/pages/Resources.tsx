@@ -1,5 +1,5 @@
 import { Divider, Tooltip } from "@mui/joy";
-import { Button, Input } from "@usememos/mui";
+import { Button } from "@usememos/mui";
 import dayjs from "dayjs";
 import { includes } from "lodash-es";
 import { PaperclipIcon, SearchIcon, TrashIcon } from "lucide-react";
@@ -75,13 +75,15 @@ const Resources = observer(() => {
               <span className="text-lg">{t("common.resources")}</span>
             </p>
             <div>
-              <Input
-                className="max-w-32"
-                placeholder={t("common.search")}
-                startDecorator={<SearchIcon className="w-4 h-auto" />}
-                value={state.searchQuery}
-                onChange={(e) => setState({ ...state, searchQuery: e.target.value })}
-              />
+              <div className="relative max-w-32">
+                <SearchIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-auto text-gray-400" />
+                <input
+                  className="w-full p-2 pl-8 border rounded bg-white dark:bg-zinc-700 dark:text-gray-300"
+                  placeholder={t("common.search")}
+                  value={state.searchQuery}
+                  onChange={(e) => setState({ ...state, searchQuery: e.target.value })}
+                />
+              </div>
             </div>
           </div>
           <div className="w-full flex flex-col justify-start items-start mt-4 mb-6">

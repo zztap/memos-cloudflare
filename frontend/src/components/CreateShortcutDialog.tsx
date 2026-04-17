@@ -1,4 +1,4 @@
-import { Input, Textarea, Button } from "@usememos/mui";
+import { Button } from "@usememos/mui";
 import { XIcon } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "react-hot-toast";
@@ -75,11 +75,11 @@ const CreateShortcutDialog: React.FC<Props> = (props: Props) => {
       <div className="flex flex-col justify-start items-start max-w-md min-w-72">
         <div className="w-full flex flex-col justify-start items-start mb-3">
           <span className="text-sm whitespace-nowrap mb-1">{t("common.title")}</span>
-          <Input className="w-full" type="text" placeholder="" value={shortcut.title} onChange={onShortcutTitleChange} />
+          <input className="w-full p-2 border rounded bg-white dark:bg-zinc-700 dark:text-gray-300" type="text" placeholder="" value={shortcut.title} onChange={onShortcutTitleChange} />
           <span className="text-sm whitespace-nowrap mt-3 mb-1">{t("common.filter")}</span>
-          <Textarea
+          <textarea
             rows={3}
-            fullWidth
+            className="w-full p-2 border rounded bg-white dark:bg-zinc-700 dark:text-gray-300"
             placeholder={t("common.shortcut-filter")}
             value={shortcut.filter}
             onChange={onShortcutFilterChange}
